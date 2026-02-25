@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Accepted Doctors - Ayurveda Admin</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar navbar-dark bg-success px-4">
+<span class="navbar-brand fw-bold">
+<i class="bi bi-flower1"></i> Ayurveda Admin Dashboard
+</span>
+<button class="btn btn-light btn-sm">Logout</button>
+</nav>
+
+<div class="container-fluid">
+<div class="row">
+
+<!-- SIDEBAR -->
+<div class="col-md-3 col-lg-2 sidebar">
+<ul class="nav flex-column">
+
+<li class="nav-item">
+<a class="nav-link" href="admin-dashboard.html">
+<i class="bi bi-person-check"></i> Doctor Requests
+</a>
+</li>
+
+<li class="nav-item">
+<a class="nav-link active" href="Doctor_admin_list.html">
+<i class="bi bi-people"></i> Accepted Doctors
+</a>
+</li>
+
+<li class="nav-item">
+<a class="nav-link" href="clinics.html">
+<i class="bi bi-hospital"></i> Clinics
+</a>
+</li>
+
+<li class="nav-item">
+<a class="nav-link" href="products.html">
+<i class="bi bi-capsule"></i> Products
+</a>
+</li>
+
+<li class="nav-item">
+<a class="nav-link" href="feedback.html">
+<i class="bi bi-chat-dots"></i> Feedback
+</a>
+</li>
+
+<li class="nav-item">
+<a class="nav-link" href="stats.html">
+<i class="bi bi-bar-chart"></i> Statistics
+</a>
+</li>
+
+</ul>
+</div>
+
+<!-- CONTENT -->
+<div class="col-md-9 col-lg-10 p-4">
+<div class="content-section">
+<h4>Accepted Doctors</h4>
+
+<div class="table-responsive">
+<table class="table table-bordered table-hover align-middle">
+<thead class="table-success">
+<tr>
+<th>ID</th>
+<th>Name</th>
+<th>Mobile Number</th>
+<th>Email</th>
+<th>Address</th>
+<th>Specialization</th>
+<th>Created At</th>
+<th>Certificate</th>
+</tr>
+</thead>
+<tbody id="acceptedDoctors"></tbody>
+</table>
+</div>
+
+</div>
+</div>
+
+</div>
+</div>
+
+<script>
+const BASE_URL = "http://localhost:3000";
+
+fetch(`${BASE_URL}/admin/accepted-doctors`)
+.then(res => res.json())
+.then(data => {
+
+const body = document.getElementById("acceptedDoctors");
+body.innerHTML = "";
+
+if (!data || data.length === 0) {
+body.innerHTML = `
+<tr>
+<td colspan="8" class="text-center">No accepted doctors found</td>
+</tr>`;
+return;
+}
+
+data.forEach(item => {
+body.innerHTML += `
+<tr>
+<td>${item.id || ""}</td>
+<td>${item.name || ""}</td>
+<td>
+<a href="tel:${item.mobile_number || ""}" class="text-decoration-none">
+${item.mobile_number || ""}
+</a>
+</td>
+<td>${item.email || ""}</td>
+<td>${item.address || ""}</td>
+<td>${item.specialization || ""}</td>
+<td>${item.created_at ? new Date(item.created_at).toLocaleDateString() : ""}</td>
+<td>
+${item.certificate 
+? `<a href="${BASE_URL}/uploads/${item.certificate}" target="_blank" class="btn btn-sm btn-primary">
+<i class="bi bi-file-earmark"></i>
+</a>` 
+: "N/A"}
+</td>
+</tr>`;
+});
+
+})
+.catch(error => {
+console.error("Error fetching doctors:", error);
+document.getElementById("acceptedDoctors").innerHTML = `
+<tr>
+<td colspan="8" class="text-center text-danger">
+Failed to load data
+</td>
+</tr>`;
+});
+</script>
+
+</body>
+</html>

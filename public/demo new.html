@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Ayurveda Admin Dashboard</title>
+
+<!-- Bootstrap -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<!-- Icons -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+
+<style>
+body {
+    background: #eef5f0;
+    font-family: 'Segoe UI', sans-serif;
+}
+.navbar {
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+.sidebar {
+    background: #ffffff;
+    height: 100vh;
+    border-right: 1px solid #ddd;
+    padding-top: 15px;
+}
+.sidebar .nav-link {
+    color: #444;
+    padding: 12px 15px;
+    margin: 6px 10px;
+    border-radius: 8px;
+    transition: 0.3s;
+}
+.sidebar .nav-link:hover {
+    background: #e9f5ef;
+}
+.sidebar .nav-link.active {
+    background: #198754;
+    color: white;
+}
+.content-section {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+.stat-card {
+    border-radius: 12px;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.08);
+    transition: transform 0.3s;
+}
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+.btn-sm {
+    border-radius: 20px;
+}
+</style>
+</head>
+
+<body>
+
+<nav class="navbar navbar-dark bg-success px-4">
+    <span class="navbar-brand fw-bold">
+        <i class="bi bi-flower1"></i> Ayurveda Admin Dashboard
+    </span>
+    <button class="btn btn-light btn-sm">Logout</button>
+</nav>
+
+<div class="container-fluid">
+<div class="row">
+
+<div class="col-md-3 col-lg-2 sidebar">
+<ul class="nav flex-column">
+
+<li class="nav-item">
+<a class="nav-link active" href="#" onclick="showSection('requests', this)">
+<i class="bi bi-person-check"></i> Requests
+</a>
+</li>
+
+<li class="nav-item">
+<a class="nav-link" href="#" onclick="showSection('users', this)">
+<i class="bi bi-people"></i> Accepted Users
+</a>
+</li>
+
+<li class="nav-item">
+<a class="nav-link" href="#" onclick="showSection('clinics', this)">
+<i class="bi bi-hospital"></i> Clinics
+</a>
+</li>
+
+<li class="nav-item">
+<a class="nav-link" href="#" onclick="showSection('products', this)">
+<i class="bi bi-capsule"></i> Products
+</a>
+</li>
+
+<li class="nav-item">
+<a class="nav-link" href="#" onclick="showSection('feedback', this)">
+<i class="bi bi-chat-dots"></i> Feedback
+</a>
+</li>
+
+<li class="nav-item">
+<a class="nav-link" href="#" onclick="showSection('stats', this)">
+<i class="bi bi-bar-chart"></i> Statistics
+</a>
+</li>
+
+</ul>
+</div>
+
+<div class="col-md-9 col-lg-10 p-4">
+
+<!-- REQUESTS -->
+<div id="requests" class="content-section">
+<h4 class="mb-3">Requests</h4>
+
+<ul class="nav nav-tabs mb-3">
+<li class="nav-item">
+<button class="nav-link active" data-bs-toggle="tab" data-bs-target="#doctorRequests">Doctor Requests</button>
+</li>
+<li class="nav-item">
+<button class="nav-link" data-bs-toggle="tab" data-bs-target="#patientRequests">Patient Requests</button>
+</li>
+</ul>
+
+<div class="tab-content">
+<div class="tab-pane fade show active" id="doctorRequests">
+<table class="table table-hover align-middle">
+<thead class="table-success">
+<tr><th>Doctor Name</th><th>Specialization</th><th>Action</th></tr>
+</thead>
+<tbody id="doctorBody"></tbody>
+</table>
+</div>
+
+<div class="tab-pane fade" id="patientRequests">
+<table class="table table-hover align-middle">
+<thead class="table-warning">
+<tr><th>Patient Name</th><th>Address</th><th>Action</th></tr>
+</thead>
+<tbody id="patientBody"></tbody>
+</table>
+</div>
+</div>
+</div>
+
+<!-- ACCEPTED USERS -->
+<div id="users" class="content-section d-none">
+<h4 class="mb-3">Accepted Users</h4>
+
+<h5>Doctors</h5>
+<table class="table table-bordered">
+<thead class="table-success"><tr><th>Name</th><th>Specialization</th></tr></thead>
+<tbody id="acceptedDoctors"></tbody>
+</table>
+
+<h5 class="mt-4">Patients</h5>
+<table class="table table-bordered">
+<thead class="table-primary"><tr><th>Name</th><th>Address</th></tr></thead>
+<tbody id="acceptedPatients"></tbody>
+</table>
+</div>
+
+<!-- CLINICS -->
+<div id="clinics" class="content-section d-none">
+<h4>Manage Clinics</h4>
+<input class="form-control mb-2" placeholder="Clinic Name">
+<button class="btn btn-success">Add Clinic</button>
+</div>
+
+<!-- PRODUCTS -->
+<div id="products" class="content-section d-none">
+<h4>Manage Products</h4>
+<input class="form-control mb-2" placeholder="Product Name">
+<button class="btn btn-success">Add Product</button>
+</div>
+
+<!-- FEEDBACK -->
+<div id="feedback" class="content-section d-none">
+<h4>Moderate Feedback</h4>
+<div class="alert alert-light shadow-sm">
+<i class="bi bi-quote"></i> Very helpful Ayurveda platform!
+<button class="btn btn-danger btn-sm float-end">Delete</button>
+</div>
+</div>
+
+<!-- STATISTICS -->
+<div id="stats" class="content-section d-none">
+<h4 class="mb-4">Platform Statistics</h4>
+<div class="row g-4">
+<div class="col-md-3"><div class="card stat-card text-center p-3"><h5>Doctors</h5><h3>25</h3></div></div>
+<div class="col-md-3"><div class="card stat-card text-center p-3"><h5>Patients</h5><h3>120</h3></div></div>
+<div class="col-md-3"><div class="card stat-card text-center p-3"><h5>Clinics</h5><h3>10</h3></div></div>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+const BASE_URL = "http://localhost:3000";
+
+function showSection(id, element) {
+    document.querySelectorAll('.content-section').forEach(sec => sec.classList.add('d-none'));
+    document.getElementById(id).classList.remove('d-none');
+
+    document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+    element.classList.add('active');
+
+    if (id === "requests") {
+        loadDoctors();
+        loadPatients();
+    }
+
+    if (id === "users") {
+        loadAcceptedUsers();
+    }
+}
+
+function renderTable(bodyId, data, type) {
+    const body = document.getElementById(bodyId);
+    body.innerHTML = "";
+
+    data.forEach(item => {
+        body.innerHTML += `
+        <tr>
+            <td>${item.name}</td>
+            <td>${type === "doctor" ? item.specialization : item.address}</td>
+            <td>
+                <button class="btn btn-success btn-sm" onclick="updateStatus(${item.id}, 'accepted')">Accept</button>
+                <button class="btn btn-danger btn-sm" onclick="updateStatus(${item.id}, 'rejected')">Reject</button>
+            </td>
+        </tr>`;
+    });
+}
+
+function renderAccepted(bodyId, data, type) {
+    const body = document.getElementById(bodyId);
+    body.innerHTML = "";
+
+    data.forEach(item => {
+        body.innerHTML += `
+        <tr>
+            <td>${item.name}</td>
+            <td>${type === "doctor" ? item.specialization : item.address}</td>
+        </tr>`;
+    });
+}
+
+function loadDoctors() {
+    fetch(`${BASE_URL}/admin/doctor-requests`).then(res => res.json()).then(data => renderTable("doctorBody", data, "doctor"));
+}
+
+function loadPatients() {
+    fetch(`${BASE_URL}/admin/patient-requests`).then(res => res.json()).then(data => renderTable("patientBody", data, "patient"));
+}
+
+function loadAcceptedUsers() {
+    fetch(`${BASE_URL}/admin/accepted-doctors`).then(res => res.json()).then(data => renderAccepted("acceptedDoctors", data, "doctor"));
+    fetch(`${BASE_URL}/admin/accepted-patients`).then(res => res.json()).then(data => renderAccepted("acceptedPatients", data, "patient"));
+}
+
+function updateStatus(id, status) {
+    fetch(`${BASE_URL}/admin/update-status/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status })
+    }).then(() => {
+        loadDoctors();
+        loadPatients();
+    });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    loadDoctors();
+    loadPatients();
+});
+</script>
+
+</body>
+</html>

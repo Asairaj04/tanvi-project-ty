@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Receptionist Dashboard</title>
+
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
+
+  <style>
+    body {
+      background-color: #f4f8ff;
+    }
+
+    .sidebar {
+      height: 100vh;
+      background: #0d6efd;
+      color: white;
+      position: fixed;
+      width: 240px;
+    }
+
+    .sidebar a {
+      color: white;
+      text-decoration: none;
+      display: block;
+      padding: 12px 20px;
+      border-radius: 8px;
+      margin: 5px 10px;
+    }
+
+    .sidebar a:hover {
+      background: rgba(255,255,255,0.2);
+    }
+
+    .content {
+      margin-left: 250px;
+      padding: 20px;
+    }
+
+    .card {
+      border-radius: 15px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+
+    .table thead {
+      background: #e9f2ff;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Sidebar -->
+  <div class="sidebar d-flex flex-column p-3">
+    <h4 class="text-center mb-4">Receptionist</h4>
+
+    <a href="#" onclick="showSection('dashboard')"><i class="bi bi-speedometer2"></i> Dashboard</a>
+    <a href="#" onclick="showSection('clinics')"><i class="bi bi-hospital"></i> Manage Clinics</a>
+    <a href="#" onclick="showSection('appointments')"><i class="bi bi-calendar-check"></i> Appointments</a>
+    <a href="#" onclick="showSection('doctors')"><i class="bi bi-person-badge"></i> Doctor Schedule</a>
+    <a href="#" onclick="showSection('notifications')"><i class="bi bi-bell"></i> Notifications</a>
+    <a href="#" onclick="showSection('reports')"><i class="bi bi-bar-chart"></i> Reports</a>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+
+    <!-- Dashboard -->
+    <div id="dashboard" class="section">
+      <h3 class="mb-4">Dashboard Overview</h3>
+
+      <div class="row g-3">
+        <div class="col-md-3">
+          <div class="card p-3 text-center">
+            <h5>Total Clinics</h5>
+            <h3 id="clinicCount">3</h3>
+          </div>
+        </div>
+
+        <div class="col-md-3">
+          <div class="card p-3 text-center">
+            <h5>Today's Appointments</h5>
+            <h3 id="appointmentCount">5</h3>
+          </div>
+        </div>
+
+        <div class="col-md-3">
+          <div class="card p-3 text-center">
+            <h5>Doctors Available</h5>
+            <h3 id="doctorCount">4</h3>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Clinics -->
+    <div id="clinics" class="section d-none">
+      <h3 class="mb-3">Manage Clinics</h3>
+
+      <button class="btn btn-primary mb-3" onclick="addClinic()">Add Clinic</button>
+
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Location</th>
+            <th>Contact</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="clinicTable"></tbody>
+      </table>
+    </div>
+
+    <!-- Appointments -->
+    <div id="appointments" class="section d-none">
+      <h3 class="mb-3">Patient Appointments</h3>
+
+      <button class="btn btn-success mb-3" onclick="bookAppointment()">Book Appointment</button>
+
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>Patient</th>
+            <th>Doctor</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="appointmentTable"></tbody>
+      </table>
+    </div>
+
+    <!-- Doctors -->
+    <div id="doctors" class="section d-none">
+      <h3 class="mb-3">Doctor Availability</h3>
+
+      <button class="btn btn-warning mb-3" onclick="addDoctor()">Add Doctor Schedule</button>
+
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>Doctor</th>
+            <th>Specialization</th>
+            <th>Available Time</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="doctorTable"></tbody>
+      </table>
+    </div>
+
+    <!-- Notifications -->
+    <div id="notifications" class="section d-none">
+      <h3 class="mb-3">Send Notification</h3>
+
+      <textarea id="notificationText" class="form-control mb-3" placeholder="Enter message..."></textarea>
+      <button class="btn btn-info" onclick="sendNotification()">Send</button>
+
+      <ul id="notificationList" class="mt-3"></ul>
+    </div>
+
+    <!-- Reports -->
+    <div id="reports" class="section d-none">
+      <h3 class="mb-3">Reports</h3>
+      <button class="btn btn-dark" onclick="generateReport()">Generate Daily Report</button>
+
+      <pre id="reportBox" class="mt-3 bg-light p-3"></pre>
+    </div>
+
+  </div>
+
+  <script>
+    function showSection(id) {
+      document.querySelectorAll('.section').forEach(sec => sec.classList.add('d-none'));
+      document.getElementById(id).classList.remove('d-none');
+    }
+
+    let clinics = [
+      { name: "City Clinic", location: "Pune", contact: "9876543210" }
+    ];
+
+    function renderClinics() {
+      const table = document.getElementById('clinicTable');
+      table.innerHTML = "";
+
+      clinics.forEach((c, i) => {
+        table.innerHTML += `
+          <tr>
+            <td>${c.name}</td>
+            <td>${c.location}</td>
+            <td>${c.contact}</td>
+            <td>
+              <button class="btn btn-sm btn-danger" onclick="deleteClinic(${i})">Delete</button>
+            </td>
+          </tr>`;
+      });
+
+      document.getElementById('clinicCount').innerText = clinics.length;
+    }
+
+    function addClinic() {
+      const name = prompt("Clinic name:");
+      const location = prompt("Location:");
+      const contact = prompt("Contact:");
+
+      if (name) {
+        clinics.push({ name, location, contact });
+        renderClinics();
+      }
+    }
+
+    function deleteClinic(i) {
+      clinics.splice(i, 1);
+      renderClinics();
+    }
+
+
+    let appointments = [];
+
+    function renderAppointments() {
+      const table = document.getElementById('appointmentTable');
+      table.innerHTML = "";
+
+      appointments.forEach((a, i) => {
+        table.innerHTML += `
+          <tr>
+            <td>${a.patient}</td>
+            <td>${a.doctor}</td>
+            <td>${a.date}</td>
+            <td>${a.status}</td>
+            <td>
+              <button class="btn btn-sm btn-success" onclick="updateStatus(${i})">Update</button>
+              <button class="btn btn-sm btn-danger" onclick="cancelAppointment(${i})">Cancel</button>
+            </td>
+          </tr>`;
+      });
+
+      document.getElementById('appointmentCount').innerText = appointments.length;
+    }
+
+    function bookAppointment() {
+      const patient = prompt("Patient name:");
+      const doctor = prompt("Doctor name:");
+      const date = prompt("Date:");
+
+      if (patient) {
+        appointments.push({ patient, doctor, date, status: "Booked" });
+        renderAppointments();
+      }
+    }
+
+    function updateStatus(i) {
+      appointments[i].status = "Completed";
+      renderAppointments();
+    }
+
+    function cancelAppointment(i) {
+      appointments.splice(i, 1);
+      renderAppointments();
+    }
+
+
+    let doctors = [];
+
+    function renderDoctors() {
+      const table = document.getElementById('doctorTable');
+      table.innerHTML = "";
+
+      doctors.forEach((d, i) => {
+        table.innerHTML += `
+          <tr>
+            <td>${d.name}</td>
+            <td>${d.specialization}</td>
+            <td>${d.time}</td>
+            <td>
+              <button class="btn btn-sm btn-danger" onclick="deleteDoctor(${i})">Delete</button>
+            </td>
+          </tr>`;
+      });
+
+      document.getElementById('doctorCount').innerText = doctors.length;
+    }
+
+    function addDoctor() {
+      const name = prompt("Doctor name:");
+      const specialization = prompt("Specialization:");
+      const time = prompt("Available time:");
+
+      if (name) {
+        doctors.push({ name, specialization, time });
+        renderDoctors();
+      }
+    }
+
+    function deleteDoctor(i) {
+      doctors.splice(i, 1);
+      renderDoctors();
+    }
+
+
+    function sendNotification() {
+      const text = document.getElementById('notificationText').value;
+      if (!text) return;
+
+      const li = document.createElement('li');
+      li.innerText = text;
+      document.getElementById('notificationList').appendChild(li);
+
+      document.getElementById('notificationText').value = "";
+    }
+
+
+    function generateReport() {
+      const report = `
+Daily Report
+------------
+Total Clinics: ${clinics.length}
+Total Appointments: ${appointments.length}
+Doctors Available: ${doctors.length}
+      `;
+
+      document.getElementById('reportBox').innerText = report;
+    }
+
+
+    renderClinics();
+    renderAppointments();
+    renderDoctors();
+  </script>
+
+</body>
+</html>

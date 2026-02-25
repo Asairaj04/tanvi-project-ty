@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Doctor Dashboard</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+body { margin:0; font-family:'Segoe UI'; background:#f4f6f9; }
+.sidebar {
+  width:250px; height:100vh; position:fixed;
+  background:linear-gradient(180deg,#6f42c1,#4e73df);
+  color:white; padding-top:20px;
+}
+.sidebar a {
+  display:block; color:white; padding:12px 20px;
+  text-decoration:none;
+}
+.sidebar a:hover { background:rgba(255,255,255,0.2); }
+.sidebar a.active { background:rgba(255,255,255,0.3); font-weight:bold; }
+.main-content { margin-left:250px; padding:30px; }
+.status-badge { font-size:12px; padding:5px 8px; border-radius:8px; }
+</style>
+</head>
+
+<body>
+
+<!-- SIDEBAR (UNCHANGED) -->
+<div class="sidebar">
+  <h4 class="text-center">Doctor Panel</h4>
+  <a href="doctor-dashboard.html" class="active">Dashboard</a>
+  <a href="doctor-appointment.html">Appointments</a>
+  <a href="doctor-profile.html">My Profile</a>
+  <a href="#" onclick="logout()">Logout</a>
+</div>
+
+<div class="main-content">
+  <h2 class="mb-4">Appointments</h2>
+
+  <table class="table table-bordered bg-white">
+    <thead class="table-dark">
+      <tr>
+        <th>Patient</th>
+        <th>Date</th>
+        <th>Time</th>
+        <th>Symptoms</th>
+        <th>Status</th>
+        <th>Payment</th> <!-- ADDED -->
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody id="appointmentTable"></tbody>
+  </table>
+
+</div>
+
+<script>
+
+checkAuth();
+loadAppointments();
+
+function logout(){
+  sessionStorage.removeItem("token");
+  window.location.href="../login.html";
+}
+
+function checkAuth(){
+  const token=sessionStorage.getItem("token");
+  if(!token) window.location.href="../login.html";
+}
+
+async function loadAppointments(){
+
+  const token = sessionStorage.getItem("token");
+
+  const res = await fetch(
+    "http://localhost:3000/doctor/appointments",
+    {
+      headers:{ "Authorization":"Bearer " + token }
+    }
+  );
+
+  if(res.status === 401 || res.status === 403){
+    alert("Unauthorized");
+    return;
+  }
+
+  const data = await res.json();
+
+  const table = document.getElementById("appointmentTable");
+  table.innerHTML="";
+
+  data.forEach(app=>{
+
+    let badgeClass="";
+    if(app.status==="pending") badgeClass="bg-warning";
+    if(app.status==="accepted") badgeClass="bg-primary";
+    if(app.status==="completed") badgeClass="bg-success";
+
+    // PAYMENT BADGE (NEW)
+    let paymentBadge="";
+    if(app.payment_status==="paid"){
+      paymentBadge=`<span class="badge bg-success">Paid</span>`;
+    }else{
+      paymentBadge=`<span class="badge bg-danger">Not Paid</span>`;
+    }
+
+    let actionBtn="";
+
+    if(app.status==="pending"){
+      actionBtn=`
+        <button class="btn btn-sm btn-primary"
+        onclick="updateStatus(${app.id},'accept')">
+        Accept</button>
+      `;
+    }
+
+    if(app.status==="accepted"){
+      actionBtn=`
+        <button class="btn btn-sm btn-success"
+        onclick="updateStatus(${app.id},'complete')">
+        Complete</button>
+      `;
+    }
+
+    table.innerHTML += `
+      <tr>
+        <td>${app.patient_name}</td>
+        <td>${app.appointment_date}</td>
+        <td>${app.appointment_time}</td>
+        <td>${app.symptoms}</td>
+        <td>
+          <span class="status-badge ${badgeClass} text-white">
+            ${app.status}
+          </span>
+        </td>
+        <td>${paymentBadge}</td>
+        <td>${actionBtn}</td>
+      </tr>
+    `;
+
+  });
+
+}
+
+async function updateStatus(id,type){
+
+  const token = sessionStorage.getItem("token");
+
+  const url = type==="accept"
+    ? `http://localhost:3000/doctor/accept/${id}`
+    : `http://localhost:3000/doctor/complete/${id}`;
+
+  await fetch(url,{
+    method:"PUT",
+    headers:{ "Authorization":"Bearer " + token }
+  });
+
+  loadAppointments();
+}
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Patient Registration</title>
+
+  <!-- Bootstrap -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+
+  <style>
+    body {
+      background: linear-gradient(
+          rgba(255, 255, 255, 0.75),
+          rgba(255, 255, 255, 0.75)
+        ),
+        url("https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?auto=format&fit=crop&w=1600&q=80");
+
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .registration-box {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 40px 50px;
+      border-radius: 18px;
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.25);
+      max-width: 720px;
+      width: 100%;
+      backdrop-filter: blur(8px);
+    }
+
+    h2 {
+      color: #6f42c1;
+      text-align: center;
+      margin-bottom: 25px;
+      font-weight: 700;
+    }
+
+    .form-label {
+      color: #4a1d96;
+      font-weight: 600;
+    }
+
+    .btn-register {
+      background: linear-gradient(135deg, #6f42c1, #8b5cf6);
+      border: none;
+      width: 100%;
+      padding: 12px;
+      font-size: 18px;
+      border-radius: 10px;
+      color: white;
+      transition: 0.3s ease;
+    }
+
+    .btn-register:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(111, 66, 193, 0.4);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="registration-box">
+    <h2>Patient Registration</h2>
+
+    <form id="patientForm">
+      <div class="mb-3">
+        <label for="patientName" class="form-label">Name</label>
+        <input
+          type="text"
+          class="form-control"
+          id="patientName"
+          required
+          pattern="[A-Za-z\s]+"
+          title="Name must contain only letters and spaces"
+        />
+      </div>
+
+      <div class="mb-3">
+        <label for="patientAddress" class="form-label">Address</label>
+        <input
+          type="text"
+          class="form-control mb-2"
+          id="patientAddress"
+          placeholder="Selected location will appear here"
+          readonly
+          required
+        />
+      
+        <!-- Hidden fields for lat & lng -->
+        <input type="hidden" id="latitude" />
+        <input type="hidden" id="longitude" />
+      
+        <!-- Google Map -->
+        <div id="map" style="height: 350px; border-radius: 12px;"></div>
+      </div>
+      
+
+      <div class="mb-3">
+        <label for="patientEmail" class="form-label">Email</label>
+        <input type="email" class="form-control" id="patientEmail" required />
+      </div>
+
+      <div class="mb-3">
+        <label for="patientPassword" class="form-label">Password</label>
+        <input
+          type="password"
+          class="form-control"
+          id="patientPassword"
+          required
+          pattern="^(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,}$"
+          title="Password must be at least 8 characters and include a special character"
+        />
+      </div>
+
+      <div class="mb-3">
+        <label for="patientConfirmPassword" class="form-label">Confirm Password</label>
+        <input
+          type="password"
+          class="form-control"
+          id="patientConfirmPassword"
+          required
+        />
+      </div>
+
+      <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" id="togglePassword" />
+        <label class="form-check-label" for="togglePassword">Show Password</label>
+      </div>
+
+      <button type="submit" class="btn-register">Register</button>
+    </form>
+  </div>
+
+  <!-- Google Maps Places API -->
+  <!-- Replace YOUR_GOOGLE_MAPS_API_KEY with your real API key -->
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBwn6CD91VsWdqoR-vDDWa-zHrE6bwZYxY&callback=initMap" async defer></script>
+
+  <script>
+    let map;
+    let marker;
+    const addressField = document.getElementById("patientAddress");
+    const latField = document.getElementById("latitude");
+    const lngField = document.getElementById("longitude");
+  
+    function initMap() {
+      const defaultLocation = { lat: 20.5937, lng: 78.9629 }; // India center (change if needed)
+  
+      map = new google.maps.Map(document.getElementById("map"), {
+        zoom: 5,
+        center: defaultLocation,
+      });
+  
+      marker = new google.maps.Marker({
+        map: map,
+      });
+  
+      // When user clicks map
+      map.addListener("click", function (event) {
+        const lat = event.latLng.lat();
+        const lng = event.latLng.lng();
+  
+        marker.setPosition({ lat, lng });
+  
+        latField.value = lat;
+        lngField.value = lng;
+  
+        // Convert lat/lng to address
+        const geocoder = new google.maps.Geocoder();
+        geocoder.geocode({ location: { lat, lng } }, function (results, status) {
+          if (status === "OK" && results[0]) {
+            addressField.value = results[0].formatted_address;
+          } else {
+            addressField.value = "Location selected";
+          }
+        });
+      });
+    }
+  
+    // Form Submit
+    const form = document.getElementById("patientForm");
+  
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+  
+      const name = document.getElementById("patientName").value.trim();
+      const address = addressField.value.trim();
+      const email = document.getElementById("patientEmail").value.trim();
+      const password = document.getElementById("patientPassword").value;
+      const confirmPassword = document.getElementById("patientConfirmPassword").value;
+      const latitude = latField.value;
+      const longitude = lngField.value;
+  
+      if (password !== confirmPassword) {
+        alert("Passwords do not match!");
+        return;
+      }
+  
+      if (!latitude || !longitude) {
+        alert("Please select a location on the map!");
+        return;
+      }
+  
+      try {
+        const res = await fetch("http://localhost:3000/register_patient", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name,
+            address,
+            email,
+            password,
+            latitude,
+            longitude,
+          }),
+        });
+  
+        const data = await res.json();
+        alert(data.message || "Registration successful");
+        form.reset();
+        marker.setPosition(null);
+      } catch (error) {
+        console.error(error);
+        alert("Error registering patient");
+      }
+    });
+  </script>
+  
+</body>
+</html>

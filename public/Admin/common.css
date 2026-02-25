@@ -1,0 +1,41 @@
+body {
+    background: #eef5f0;
+    font-family: 'Segoe UI', sans-serif;
+}
+.navbar {
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+.sidebar {
+    background: #ffffff;
+    height: 100vh;
+    border-right: 1px solid #ddd;
+    padding-top: 15px;
+}
+.sidebar .nav-link {
+    color: #444;
+    padding: 12px 15px;
+    margin: 6px 10px;
+    border-radius: 8px;
+    transition: 0.3s;
+}
+.sidebar .nav-link:hover {
+    background: #e9f5ef;
+}
+.sidebar .nav-link.active {
+    background: #198754;
+    color: white;
+}
+.content-section {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+.stat-card {
+    border-radius: 12px;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.08);
+    transition: transform 0.3s;
+}
+.stat-card:hover {
+    transform: translateY(-5px);
+}
