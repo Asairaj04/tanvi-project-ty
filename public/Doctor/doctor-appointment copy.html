@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Doctor appointment</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+body { margin:0; font-family:'Segoe UI'; background:#f4f6f9; }
+
+.sidebar {
+  width:250px;
+  height:100vh;
+  position:fixed;
+  background:linear-gradient(180deg,#6f42c1,#4e73df);
+  color:white;
+  padding-top:20px;
+}
+
+.sidebar a {
+  display:block;
+  color:white;
+  padding:12px 20px;
+  text-decoration:none;
+}
+
+.sidebar a:hover {
+  background:rgba(255,255,255,0.2);
+}
+
+.sidebar a.active {
+  background:rgba(255,255,255,0.3);
+  font-weight:bold;
+}
+
+.main-content {
+  margin-left:250px;
+  padding:30px;
+}
+
+.status-badge {
+  font-size:12px;
+  padding:5px 8px;
+  border-radius:8px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- ================= SIDEBAR (UNCHANGED) ================= -->
+<div class="sidebar">
+  <h4 class="text-center">Doctor Panel</h4>
+
+  <a href="doctor-dashboard.html">Dashboard</a>
+  <a href="doctor-appointment.html" class="active">Appointments</a>
+  <a href="doctor-profile.html">My Profile</a>
+  <a href="#" onclick="logout()">Logout</a>
+</div>
+<!-- ======================================================= -->
+
+<div class="main-content">
+
+  <h2 class="mb-4">Appointments</h2>
+
+  <table class="table table-bordered bg-white">
+    <thead class="table-dark">
+      <tr>
+        <th>Patient</th>
+        <th>Date</th>
+        <th>Time</th>
+        <th>Symptoms</th>
+        <th>Status</th>
+        <th>Payment</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody id="appointmentTable"></tbody>
+  </table>
+
+</div>
+
+<script>
+
+  // ================= AUTH CHECK =================
+  function checkAuth(){
+    const token = sessionStorage.getItem("token");
+    if(!token){
+      window.location.href="../login.html";
+    }
+  }
+  checkAuth();
+  
+  // ================= LOGOUT =================
+  function logout(){
+    sessionStorage.removeItem("token");
+    window.location.href="../login.html";
+  }
+  
+  // ================= LOAD APPOINTMENTS =================
+  async function loadAppointments(){
+  
+    const token = sessionStorage.getItem("token");
+  
+    const res = await fetch(
+      "http://localhost:3000/doctor/appointments",
+      {
+        headers:{ "Authorization":"Bearer " + token }
+      }
+    );
+  
+    const data = await res.json();
+    const table = document.getElementById("appointmentTable");
+    table.innerHTML="";
+  
+    data.forEach(app=>{
+  
+      let badgeClass="";
+      if(app.status==="pending") badgeClass="bg-warning";
+      if(app.status==="accepted") badgeClass="bg-primary";
+      if(app.status==="completed") badgeClass="bg-success";
+  
+      let paymentBadge="";
+      if(app.payment_status==="paid"){
+        paymentBadge=`<span class="badge bg-success">Paid</span>`;
+      }else{
+        paymentBadge=`<span class="badge bg-danger">Not Paid</span>`;
+      }
+  
+      let actionBtn="";
+  
+      if(app.status==="pending"){
+        actionBtn=`
+          <button class="btn btn-sm btn-primary"
+          onclick="acceptAppointment(${app.id})">
+          Accept</button>
+        `;
+      }
+  
+      if(app.status==="accepted"){
+        actionBtn=`
+          <button class="btn btn-sm btn-success"
+          onclick="startMeeting(${app.id})">
+          Start Meeting</button>
+        `;
+      }
+  
+      table.innerHTML += `
+        <tr>
+          <td>${app.patient_name}</td>
+          <td>${app.appointment_date}</td>
+          <td>${app.appointment_time}</td>
+          <td>${app.symptoms}</td>
+          <td>
+            <span class="status-badge ${badgeClass} text-white">
+              ${app.status}
+            </span>
+          </td>
+          <td>${paymentBadge}</td>
+          <td>${actionBtn}</td>
+        </tr>
+      `;
+    });
+  }
+  
+  loadAppointments();
+  
+  // ================= ACCEPT =================
+  async function acceptAppointment(id){
+  
+    const token = sessionStorage.getItem("token");
+  
+    await fetch(
+      `http://localhost:3000/doctor/accept/${id}`,
+      {
+        method:"PUT",
+        headers:{ "Authorization":"Bearer " + token }
+      }
+    );
+  
+    loadAppointments();
+  }
+  
+  // ================= START MEETING =================
+  async function startMeeting(id){
+  
+    const token = sessionStorage.getItem("token");
+  
+    const res = await fetch(
+      "http://localhost:3000/doctor/start-meeting",
+      {
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json",
+          "Authorization":"Bearer " + token
+        },
+        body: JSON.stringify({
+          appointmentId: id
+        })
+      }
+    );
+  
+    const data = await res.json();
+  
+    if(res.ok){
+  
+      const meetingURL = "https://meet.jit.si/" + data.room;
+      window.open(data.room, "_blank");
+  
+    } else {
+      alert(data.message);
+    }
+  
+  }
+  
+  </script>
+
+</body>
+</html>

@@ -47,11 +47,6 @@ body { margin:0; font-family:'Segoe UI'; background:#f4f6f9; }
   border-radius:15px;
   box-shadow:0 8px 18px rgba(0,0,0,0.1);
 }
-
-.status-toggle {
-  width:60px;
-  height:30px;
-}
 </style>
 </head>
 
@@ -71,37 +66,47 @@ body { margin:0; font-family:'Segoe UI'; background:#f4f6f9; }
 
   <h2>My Profile</h2>
 
-  <div class="card p-4 mt-3">
+  <!-- Add Receptionist Button -->
+  <button class="btn btn-success mb-3" onclick="addReceptionist()">
+    Add Receptionist
+  </button>
 
-    <p><strong>Name:</strong> <span id="docName">Loading...</span></p>
-    <p><strong>Email:</strong> <span id="docEmail">Loading...</span></p>
-    <p><strong>Mobile:</strong> <span id="docMobile">Loading...</span></p>
-    <p><strong>Address:</strong> <span id="docAddress">Loading...</span></p>
+  <div class="card p-4">
+
+    <p><strong>Name:</strong> <span id="docName"></span></p>
+    <p><strong>Email:</strong> <span id="docEmail"></span></p>
+    <p><strong>Mobile:</strong> <span id="docMobile"></span></p>
+    <p><strong>Address:</strong> <span id="docAddress"></span></p>
+
+    <div class="mb-3">
+      <label><strong>City</strong></label>
+      <input type="text" id="docCity" class="form-control">
+    </div>
 
     <hr>
 
-    <!-- Availability -->
     <div class="mb-3">
-      <label class="form-label"><strong>Availability Status</strong></label><br>
-      <div class="form-check form-switch">
-        <input class="form-check-input status-toggle" type="checkbox" id="availabilityToggle">
-        <label class="form-check-label" id="statusLabel">OFF</label>
+      <label><strong>Availability</strong></label>
+      <select id="availability" class="form-control">
+        <option value="ON">ON</option>
+        <option value="OFF">OFF</option>
+      </select>
+    </div>
+
+    <div class="row">
+      <div class="col-md-6">
+        <label><strong>Start Time</strong></label>
+        <input type="time" id="startTime" class="form-control">
+      </div>
+      <div class="col-md-6">
+        <label><strong>End Time</strong></label>
+        <input type="time" id="endTime" class="form-control">
       </div>
     </div>
 
-    <!-- Slot Timing -->
-    <div class="row mt-3">
-      <div class="col-md-6">
-        <label class="form-label"><strong>Start Time</strong></label>
-        <input type="time" class="form-control" id="startTime">
-      </div>
-      <div class="col-md-6">
-        <label class="form-label"><strong>End Time</strong></label>
-        <input type="time" class="form-control" id="endTime">
-      </div>
-    </div>
-
-    <button class="btn btn-primary mt-4" onclick="saveProfile()">Save Changes</button>
+    <button class="btn btn-primary mt-4" onclick="saveProfile()">
+      Save Changes
+    </button>
 
   </div>
 
@@ -109,9 +114,6 @@ body { margin:0; font-family:'Segoe UI'; background:#f4f6f9; }
 
 <script>
 
-// ===============================
-// AUTH CHECK
-// ===============================
 function checkAuth(){
   const token = sessionStorage.getItem("token");
   if(!token){
@@ -120,138 +122,59 @@ function checkAuth(){
 }
 checkAuth();
 
-// ===============================
-// TIME CONVERSION FUNCTIONS
-// ===============================
-
-// Convert 24hr (DB) → 12hr (Display)
-function convertTo12Hour(time24){
-
-  if(!time24) return "";
-
-  let [hours, minutes] = time24.split(":");
-  hours = parseInt(hours);
-
-  let period = hours >= 12 ? "PM" : "AM";
-  hours = hours % 12;
-  hours = hours ? hours : 12;
-
-  return `${hours.toString().padStart(2,'0')}:${minutes} ${period}`;
-}
-
-// Convert 12hr → 24hr (Before Saving)
-function convertTo24Hour(time12){
-
-  if(!time12) return "";
-
-  let [time, period] = time12.split(" ");
-  let [hours, minutes] = time.split(":");
-
-  hours = parseInt(hours);
-
-  if(period === "PM" && hours < 12){
-    hours += 12;
-  }
-
-  if(period === "AM" && hours === 12){
-    hours = 0;
-  }
-
-  return `${hours.toString().padStart(2,'0')}:${minutes}:00`;
-}
-
-// ===============================
-// LOAD PROFILE
-// ===============================
 async function loadProfile(){
 
   const token = sessionStorage.getItem("token");
 
-  try{
-    const res = await fetch("http://localhost:3000/doctor/profile",{
-      headers:{
-        "Authorization":"Bearer " + token
-      }
-    });
+  const res = await fetch("http://localhost:3000/doctor/profile",{
+    headers:{ "Authorization":"Bearer " + token }
+  });
 
-    const data = await res.json();
+  const data = await res.json();
 
-    if(res.status !== 200){
-      alert(data.message);
-      return;
-    }
-
-    document.getElementById("docName").innerText = data.name;
-    document.getElementById("docEmail").innerText = data.email;
-    document.getElementById("docMobile").innerText = data.mobile_number;
-    document.getElementById("docAddress").innerText = data.address;
-
-    // Availability
-    const toggle = document.getElementById("availabilityToggle");
-    const label = document.getElementById("statusLabel");
-
-    toggle.checked = data.availability === "ON";
-    label.innerText = toggle.checked ? "ON" : "OFF";
-
-    // Convert DB 24hr → input 24hr format
-    document.getElementById("startTime").value = data.start_time ? data.start_time.substring(0,5) : "";
-    document.getElementById("endTime").value = data.end_time ? data.end_time.substring(0,5) : "";
-
-  }catch(err){
-    alert("Error loading profile");
-  }
+  document.getElementById("docName").innerText = data.name;
+  document.getElementById("docEmail").innerText = data.email;
+  document.getElementById("docMobile").innerText = data.mobile_number;
+  document.getElementById("docAddress").innerText = data.address;
+  document.getElementById("docCity").value = data.city || "";
+  document.getElementById("availability").value = data.availability;
+  document.getElementById("startTime").value = data.start_time?.substring(0,5);
+  document.getElementById("endTime").value = data.end_time?.substring(0,5);
 }
 
 loadProfile();
 
-// ===============================
-// TOGGLE LABEL
-// ===============================
-const toggle = document.getElementById("availabilityToggle");
-const label = document.getElementById("statusLabel");
-
-toggle.addEventListener("change",function(){
-  label.innerText = this.checked ? "ON" : "OFF";
-});
-
-// ===============================
-// SAVE PROFILE
-// ===============================
 async function saveProfile(){
 
   const token = sessionStorage.getItem("token");
 
-  const availability = toggle.checked ? "ON" : "OFF";
-
-  // input type="time" already gives 24hr
+  const city = document.getElementById("docCity").value;
+  const availability = document.getElementById("availability").value;
   const startTime = document.getElementById("startTime").value + ":00";
   const endTime = document.getElementById("endTime").value + ":00";
 
-  try{
-    const res = await fetch("http://localhost:3000/doctor/update-profile",{
-      method:"PUT",
-      headers:{
-        "Content-Type":"application/json",
-        "Authorization":"Bearer " + token
-      },
-      body:JSON.stringify({
-        availability,
-        startTime,
-        endTime
-      })
-    });
+  const res = await fetch("http://localhost:3000/doctor/update-profile",{
+    method:"PUT",
+    headers:{
+      "Content-Type":"application/json",
+      "Authorization":"Bearer " + token
+    },
+    body:JSON.stringify({
+      city,
+      availability,
+      startTime,
+      endTime
+    })
+  });
 
-    const data = await res.json();
-    alert(data.message);
-
-  }catch(err){
-    alert("Error saving profile");
-  }
+  const data = await res.json();
+  alert(data.message);
 }
 
-// ===============================
-// LOGOUT
-// ===============================
+function addReceptionist(){
+  window.location.href="../Receptionist/Receptionist Registration Page.html";
+}
+
 function logout(){
   sessionStorage.removeItem("token");
   window.location.href="../login.html";

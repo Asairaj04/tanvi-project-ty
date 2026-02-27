@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Appointments</title>
+  <style>
+    body { margin:0; font-family:Arial; display:flex; }
+    .sidebar { width:220px; background:#1e293b; color:white; height:100vh; padding:20px; }
+    .sidebar a { display:block; color:white; text-decoration:none; padding:10px; margin:8px 0; border-radius:6px; }
+    .sidebar a:hover { background:#334155; }
+    .logo { text-align:center; margin-bottom:30px; }
+    .content { flex:1; padding:30px; background:#f1f5f9; }
+    table { width:100%; background:white; border-collapse:collapse; }
+    th,td { padding:10px; border:1px solid #ddd; }
+    button { padding:5px 10px; }
+  </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h4 class="logo">Clinic Panel</h4>
+        <a href="receptionist-dashboard.html">Dashboard</a>
+        <a href="receptionist-patient.html">Patients</a>
+        <a href="receptionist-appointment.html">Appointments</a>
+        <a href="receptionist-payment.html">Payments</a>
+        <a href="receptionist-profile.html">Profile</a>
+        <a href="#" onclick="logout()">Logout</a>
+      </div>
+
+<div class="content">
+  <h2>Appointments</h2>
+  <table id="table"></table>
+</div>
+
+<script>
+const token = sessionStorage.getItem("token");
+
+function load(){
+fetch("http://localhost:3000/receptionist/appointments",{
+  headers:{ Authorization:"Bearer "+token }
+})
+.then(res=>res.json())
+.then(data=>{
+  let rows=`<tr>
+    <th>Patient</th>
+    <th>Date</th>
+    <th>Time</th>
+    <th>Status</th>
+    <th>Action</th>
+  </tr>`;
+
+  data.forEach(a=>{
+    rows+=`<tr>
+      <td>${a.patient_name || a.name || "N/A"}</td>
+      <td>${a.appointment_date}</td>
+      <td>${a.appointment_time}</td>
+      <td>${a.status}</td>
+      <td><button onclick="cancel(${a.id})">Cancel</button></td>
+    </tr>`;
+  });
+
+  document.getElementById("table").innerHTML=rows;
+});
+}
+
+function cancel(id){
+fetch("http://localhost:3000/receptionist/cancel/"+id,{
+  method:"PUT",
+  headers:{ Authorization:"Bearer "+token }
+})
+.then(()=>load());
+}
+
+load();
+
+function logout(){
+    sessionStorage.removeItem("token");
+  window.location.href="../login.html";
+}
+</script>
+
+</body>
+</html>

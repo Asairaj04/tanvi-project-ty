@@ -207,10 +207,13 @@ h3 {
     }
   
     const options = {
-      key: "rzp_test_SK4Bmk88FD8W5g",  // YOUR KEY HERE
+      key: "rzp_test_SK4Bmk88FD8W5g",
       amount: order.amount,
       currency: order.currency,
       order_id: order.id,
+    
+      name: "Dr. " + order.doctorName,   // ✅ THIS LINE ADDED
+      description: "Doctor Consultation Fee",
   
       handler: async function (response) {
   

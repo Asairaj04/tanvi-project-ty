@@ -662,6 +662,16 @@ const PORT = 3000;
 const SECRET_KEY = "tanvi06"; // change in production
 
 
+const axios = require("axios");
+const jwtZoom = require("jsonwebtoken");
+
+const ZOOM_CLIENT_ID = "g5V_D3AKTFKV1qFONNZWMA";
+
+const ZOOM_CLIENT_SECRET = "271QFbzz4b9TuWRSOmbi4v9ECMgt2pjw";
+
+const ZOOM_ACCOUNT_ID = "mCY_Za9lQSaRH-GuM7DxDQ";
+
+
 const Razorpay = require("razorpay");
 const crypto = require("crypto");
 
@@ -696,6 +706,27 @@ db.connect((err) => {
     createAdminIfNotExists();
   }
 });
+
+
+// 🔹 STEP 3 — Function to Get Zoom Access Token
+async function getZoomAccessToken() {
+  const response = await axios.post(
+    `https://zoom.us/oauth/token?grant_type=account_credentials&account_id=${ZOOM_ACCOUNT_ID}`,
+    {},
+    {
+      auth: {
+        username: ZOOM_CLIENT_ID,
+        password: ZOOM_CLIENT_SECRET
+      }
+    }
+  );
+
+  return response.data.access_token;
+}
+
+
+
+
 
 // ===============================
 // CREATE DEFAULT ADMIN
@@ -826,6 +857,87 @@ app.post("/register-doctor", upload.single("certificate"), async (req, res) => {
 });
 
 // ===============================
+// DOCTOR ADD RECEPTIONIST
+// ===============================
+// ===============================
+// DOCTOR ADD RECEPTIONIST
+// ===============================
+app.post("/doctor/add-receptionist", verifyToken, async (req, res) => {
+
+  console.log("BODY:", req.body);
+  console.log("USER:", req.user);
+
+  if (req.user.rid !== 1) {
+    return res.status(403).json({ message: "Doctor access only" });
+  }
+
+  const { name, email, password, address, mobile_number } = req.body;
+
+  if (!name || !email || !password || !address || !mobile_number) {
+    return res.status(400).json({ message: "All fields are required" });
+  }
+
+  try {
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const sql = `
+      INSERT INTO users
+      (name, email, password, address, mobile_number, rid, status, doctor_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    db.query(sql,
+      [
+        name,
+        email,
+        hashedPassword,
+        address,
+        mobile_number,
+        2,
+        "accepted",
+        req.user.id   // doctor ID automatically saved
+      ],
+      (err) => {
+
+        if (err) {
+          console.log(err);
+          return res.status(500).json({ message: "Database error" });
+        }
+
+        res.json({ message: "Receptionist added successfully" });
+
+      });
+
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+
+});
+
+//receptionist appointintment 
+
+app.get("/receptionist/appointments", verifyToken, (req,res)=>{
+
+  if(req.user.rid !== 2)
+    return res.status(403).json({message:"Access denied"});
+
+  const doctorId = req.user.doctor_id;
+
+  db.query(`
+    SELECT * FROM appointments
+    WHERE doctor_id = ?
+  `,[doctorId],(err,result)=>{
+
+      if(err)
+        return res.status(500).json({message:"DB error"});
+
+      res.json(result);
+  });
+
+});
+
+// ===============================
 // LOGIN WITH JWT
 // ===============================
 app.post("/login", (req, res) => {
@@ -850,9 +962,9 @@ app.post("/login", (req, res) => {
         return res.status(401).json({ message: "Invalid credentials" });
 
       const token = jwt.sign(
-        { id: user.id, rid: user.rid },
+        { id: user.id, rid: user.rid, doctor_id: user.doctor_id },
         SECRET_KEY,
-        { expiresIn: "1h" }
+        { expiresIn: "10h" }
       );
 
       res.json({
@@ -978,62 +1090,140 @@ app.put('/admin/update-status/:id', (req, res) => {
 // ===============================
 // GET DOCTOR PROFILE
 // ===============================
+// app.get("/doctor/profile", verifyToken, (req, res) => {
+
+//   if (req.user.rid !== 1)
+//     return res.status(403).json({ message: "Access denied. Doctor only." });
+
+//   const sql = `
+//     SELECT id, name, email, address, mobile_number, 
+//            availability, start_time, end_time
+//     FROM users 
+//     WHERE id = ?
+//   `;
+
+//   db.query(sql, [req.user.id], (err, result) => {
+//     if (err)
+//       return res.status(500).json({ message: "Database error" });
+
+//     if (result.length === 0)
+//       return res.status(404).json({ message: "Doctor not found" });
+
+//     res.json(result[0]);
+//   });
+
+// });
+
+// // ===============================
+// // UPDATE DOCTOR PROFILE
+// // ===============================
+// app.put("/doctor/update-profile", verifyToken, (req, res) => {
+
+//   if (req.user.rid !== 1)
+//     return res.status(403).json({ message: "Access denied. Doctor only." });
+
+//   const { availability, startTime, endTime } = req.body;
+
+//   if (!availability)
+//     return res.status(400).json({ message: "Availability required" });
+
+//   const sql = `
+//     UPDATE users 
+//     SET availability = ?, 
+//         start_time = ?, 
+//         end_time = ?
+//     WHERE id = ?
+//   `;
+
+//   db.query(
+//     sql,
+//     [availability, startTime || null, endTime || null, req.user.id],
+//     (err) => {
+//       if (err)
+//         return res.status(500).json({ message: "Update failed" });
+
+//       res.json({ message: "Profile updated successfully" });
+//     }
+//   );
+
+// });
+
+
+
+// ================= GET DOCTOR PROFILE =================
 app.get("/doctor/profile", verifyToken, (req, res) => {
 
-  if (req.user.rid !== 1)
-    return res.status(403).json({ message: "Access denied. Doctor only." });
+  if (!req.user || !req.user.id) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  const doctorId = req.user.id;
 
   const sql = `
-    SELECT id, name, email, address, mobile_number, 
+    SELECT id, name, email, mobile_number, address, city,
            availability, start_time, end_time
-    FROM users 
+    FROM users
     WHERE id = ?
   `;
 
-  db.query(sql, [req.user.id], (err, result) => {
-    if (err)
-      return res.status(500).json({ message: "Database error" });
+  db.query(sql, [doctorId], (err, result) => {
 
-    if (result.length === 0)
+    if (err) {
+      console.error("GET PROFILE ERROR:", err);
+      return res.status(500).json({ message: "Database error" });
+    }
+
+    if (result.length === 0) {
       return res.status(404).json({ message: "Doctor not found" });
+    }
 
     res.json(result[0]);
   });
-
 });
 
-// ===============================
-// UPDATE DOCTOR PROFILE
-// ===============================
+
+// ================= UPDATE DOCTOR PROFILE =================
 app.put("/doctor/update-profile", verifyToken, (req, res) => {
 
-  if (req.user.rid !== 1)
-    return res.status(403).json({ message: "Access denied. Doctor only." });
+  if (!req.user || !req.user.id) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
 
-  const { availability, startTime, endTime } = req.body;
+  const doctorId = req.user.id;
+  const { city, availability, startTime, endTime } = req.body;
 
-  if (!availability)
-    return res.status(400).json({ message: "Availability required" });
+  // Safety defaults
+  const safeCity = city || null;
+  const safeAvailability = availability || "OFF";
+  const safeStartTime = startTime || null;
+  const safeEndTime = endTime || null;
 
   const sql = `
-    UPDATE users 
-    SET availability = ?, 
-        start_time = ?, 
+    UPDATE users
+    SET city = ?,
+        availability = ?,
+        start_time = ?,
         end_time = ?
     WHERE id = ?
   `;
 
   db.query(
     sql,
-    [availability, startTime || null, endTime || null, req.user.id],
-    (err) => {
-      if (err)
-        return res.status(500).json({ message: "Update failed" });
+    [safeCity, safeAvailability, safeStartTime, safeEndTime, doctorId],
+    (err, result) => {
+
+      if (err) {
+        console.error("UPDATE PROFILE ERROR:", err);
+        return res.status(500).json({ message: "Database error" });
+      }
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ message: "Doctor not found" });
+      }
 
       res.json({ message: "Profile updated successfully" });
     }
   );
-
 });
 
 
@@ -1043,6 +1233,33 @@ app.put("/doctor/update-profile", verifyToken, (req, res) => {
 // ===============================
 // GET AVAILABLE DOCTORS (PATIENT)
 // ===============================
+// app.get("/patient/available/doctors", verifyToken, (req, res) => {
+
+//   // Allow only patient (rid = 3)
+//   if (req.user.rid !== 3) {
+//     return res.status(403).json({ message: "Access denied" });
+//   }
+
+//   const sql = `
+//     SELECT id, name, specialization, start_time, end_time
+//     FROM users
+//     WHERE rid = 1
+//       AND status = 'accepted'
+//       AND availability = 'ON'
+//   `;
+
+//   db.query(sql, (err, rows) => {
+
+//     if (err) {
+//       console.error(err);
+//       return res.status(500).json({ message: "Database error" });
+//     }
+
+//     res.json(rows);
+//   });
+
+// });
+
 app.get("/patient/available/doctors", verifyToken, (req, res) => {
 
   // Allow only patient (rid = 3)
@@ -1051,7 +1268,13 @@ app.get("/patient/available/doctors", verifyToken, (req, res) => {
   }
 
   const sql = `
-    SELECT id, name, specialization, start_time, end_time
+    SELECT 
+      id, 
+      name, 
+      specialization, 
+      city,               -- ✅ ADDED
+      start_time, 
+      end_time
     FROM users
     WHERE rid = 1
       AND status = 'accepted'
@@ -1061,7 +1284,7 @@ app.get("/patient/available/doctors", verifyToken, (req, res) => {
   db.query(sql, (err, rows) => {
 
     if (err) {
-      console.error(err);
+      console.error("GET DOCTORS ERROR:", err);
       return res.status(500).json({ message: "Database error" });
     }
 
@@ -1069,6 +1292,41 @@ app.get("/patient/available/doctors", verifyToken, (req, res) => {
   });
 
 });
+
+
+//meeting validate
+
+
+app.get("/meeting/validate/:meetingId", verifyToken, (req, res) => {
+
+  const meetingId = req.params.meetingId;
+
+  const sql = `
+    SELECT *
+    FROM appointments
+    WHERE meeting_link = ?
+      AND meeting_started = 1
+      AND (doctor_id = ? OR patient_id = ?)
+  `;
+
+  db.query(sql,
+    [meetingId, req.user.id, req.user.id],
+    (err, result) => {
+
+      if (err) return res.status(500).json({ message: "DB error" });
+
+      if (result.length === 0) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      res.json({ message: "Access granted" });
+    }
+  );
+
+});
+
+
+
 
 
 // ===============================
@@ -1184,43 +1442,138 @@ app.post("/patient/book-appointment", verifyToken, (req,res)=>{
 });
 
 // Doctor Accept Appointment
-app.put("/doctor/accept/:id", verifyToken, (req, res) => {
 
-  if (req.user.rid !== 1) {
+// app.put("/doctor/accept/:id", verifyToken, (req, res) => {
+
+//   if (req.user.rid !== 1) {
+//     return res.status(403).json({ message: "Access denied" });
+//   }
+
+//   const appointmentId = req.params.id;
+
+//   const meetingLink = `https://meet.jit.si/appointment_${appointmentId}_${Date.now()}`;
+
+//   const sql = `
+//     UPDATE appointments 
+//     SET status = 'accepted',
+//         meeting_link = ?
+//     WHERE id = ?
+//   `;
+
+//   db.query(sql, [meetingLink, appointmentId], (err, result) => {
+//     if (err) return res.status(500).json({ message: "DB error" });
+
+//     res.json({
+//       message: "Appointment accepted",
+//       meeting_link: meetingLink
+//     });
+//   });
+// });
+
+
+// app.put("/doctor/accept/:id", verifyToken, (req, res) => {
+
+//   if (req.user.rid !== 1) {
+//     return res.status(403).json({ message: "Access denied" });
+//   }
+
+//   const appointmentId = req.params.id;
+
+//   // Generate unique meeting ID (temporary - for future Zoom replace)
+//   const meetingId = "meeting_" + appointmentId + "_" + Date.now();
+
+//   const sql = `
+//     UPDATE appointments
+//     SET status = 'accepted',
+//         meeting_link = ?
+//     WHERE id = ?
+//   `;
+
+//   db.query(sql, [meetingId, appointmentId], (err, result) => {
+
+//     if (err) {
+//       console.log(err);
+//       return res.status(500).json({ message: "Database error" });
+//     }
+
+//     if (result.affectedRows === 0) {
+//       return res.status(404).json({ message: "Appointment not found" });
+//     }
+
+//     res.json({
+//       message: "Appointment accepted",
+//       meetingId: meetingId
+//     });
+
+//   });
+
+// });
+
+app.put("/doctor/accept/:id", verifyToken, async (req, res) => {
+
+  if (req.user.rid !== 1)
     return res.status(403).json({ message: "Access denied" });
-  }
 
   const appointmentId = req.params.id;
 
-  const meetingLink = `https://meet.jit.si/appointment_${appointmentId}_${Date.now()}`;
+  try {
 
-  const sql = `
-    UPDATE appointments 
-    SET status = 'accepted',
-        meeting_link = ?
-    WHERE id = ?
-  `;
+    const accessToken = await getZoomAccessToken();
 
-  db.query(sql, [meetingLink, appointmentId], (err, result) => {
-    if (err) return res.status(500).json({ message: "DB error" });
+    const zoomMeeting = await axios.post(
+      "https://api.zoom.us/v2/users/me/meetings",
+      {
+        topic: "Doctor Consultation",
+        type: 2,
+        duration: 30,
+        settings: {
+          host_video: true,
+          participant_video: true
+        }
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        }
+      }
+    );
 
-    res.json({
-      message: "Appointment accepted",
-      meeting_link: meetingLink
-    });
-  });
+    const joinUrl = zoomMeeting.data.join_url;   // patient link
+    const startUrl = zoomMeeting.data.start_url; // doctor link
+
+    db.query(
+      "UPDATE appointments SET status='accepted', meeting_link=?, host_link=? WHERE id=?",
+      [joinUrl, startUrl, appointmentId],
+      (err) => {
+        if (err) return res.status(500).json({ message: "DB error" });
+
+        res.json({ message: "Appointment accepted" });
+      }
+    );
+
+  } catch (error) {
+    console.log(error.response?.data || error.message);
+    res.status(500).json({ message: "Zoom meeting creation failed" });
+  }
+
 });
+
+
+
+
 
 // Doctor Complete Appointment
 // -------------------
 app.put("/doctor/complete/:id", verifyToken, (req, res) => {
 
-  const id = req.params.id;
+  if (req.user.rid !== 1) {
+    return res.status(403).json({ message: "Access denied" });
+  }
 
   db.query(
     "UPDATE appointments SET status='completed' WHERE id=?",
-    [id],
-    err => {
+    [req.params.id],
+    (err) => {
       if (err) return res.status(500).json({ message: "Error" });
       res.json({ message: "Appointment completed" });
     }
@@ -1331,6 +1684,51 @@ app.get("/patient/blocked-slots/:doctorId/:date", verifyToken, (req,res)=>{
 
 //order route 
 
+// app.post("/patient/create-order", verifyToken, async (req,res)=>{
+
+//   if(req.user.rid !== 3)
+//     return res.status(403).json({ message:"Patient access only" });
+
+//   const { doctorId } = req.body;
+//   const patientId = req.user.id;
+
+//   if(!doctorId)
+//     return res.status(400).json({ message:"DoctorId required" });
+
+//   const amount = 200;
+
+//   const options = {
+//     amount: amount * 100,
+//     currency: "INR",
+//     receipt: "receipt_" + Date.now()
+//   };
+
+//   try{
+
+//     const order = await razorpay.orders.create(options);
+
+//     db.query(`
+//       INSERT INTO payments
+//       (patient_id, doctor_id, razorpay_order_id, amount)
+//       VALUES (?,?,?,?)
+//     `,[patientId, doctorId, order.id, amount],
+//     (err)=>{
+//       if(err){
+//         console.log("DB Insert Error:", err);
+//         return res.status(500).json({ message:"Payment insert failed" });
+//       }
+
+//       res.json(order);
+//     });
+
+//   }catch(err){
+//     console.log("Razorpay Error:", err);
+//     res.status(500).json({ message:"Order creation failed" });
+//   }
+
+// });
+
+
 app.post("/patient/create-order", verifyToken, async (req,res)=>{
 
   if(req.user.rid !== 3)
@@ -1344,34 +1742,56 @@ app.post("/patient/create-order", verifyToken, async (req,res)=>{
 
   const amount = 200;
 
-  const options = {
-    amount: amount * 100,
-    currency: "INR",
-    receipt: "receipt_" + Date.now()
-  };
+  // 🔹 Get Doctor Name
+  db.query(
+    "SELECT name FROM users WHERE id = ? AND rid = 1",
+    [doctorId],
+    async (err, result) => {
 
-  try{
-
-    const order = await razorpay.orders.create(options);
-
-    db.query(`
-      INSERT INTO payments
-      (patient_id, doctor_id, razorpay_order_id, amount)
-      VALUES (?,?,?,?)
-    `,[patientId, doctorId, order.id, amount],
-    (err)=>{
-      if(err){
-        console.log("DB Insert Error:", err);
-        return res.status(500).json({ message:"Payment insert failed" });
+      if(err || result.length === 0){
+        return res.status(500).json({ message:"Doctor not found" });
       }
 
-      res.json(order);
-    });
+      const doctorName = result[0].name;
 
-  }catch(err){
-    console.log("Razorpay Error:", err);
-    res.status(500).json({ message:"Order creation failed" });
-  }
+      const options = {
+        amount: amount * 100,
+        currency: "INR",
+        receipt: "receipt_" + Date.now()
+      };
+
+      try{
+
+        const order = await razorpay.orders.create(options);
+
+        db.query(`
+          INSERT INTO payments
+          (patient_id, doctor_id, razorpay_order_id, amount)
+          VALUES (?,?,?,?)
+        `,
+        [patientId, doctorId, order.id, amount],
+        (err)=>{
+          if(err){
+            console.log("DB Insert Error:", err);
+            return res.status(500).json({ message:"Payment insert failed" });
+          }
+
+          // ✅ RETURN DOCTOR NAME ALSO
+          res.json({
+            id: order.id,
+            amount: order.amount,
+            currency: order.currency,
+            doctorName: doctorName
+          });
+        });
+
+      }catch(err){
+        console.log("Razorpay Error:", err);
+        res.status(500).json({ message:"Order creation failed" });
+      }
+
+    }
+  );
 
 });
 
@@ -1478,52 +1898,27 @@ app.get("/patient/completed-appointments", verifyToken, (req, res) => {
 
 app.post("/doctor/start-meeting", verifyToken, (req, res) => {
 
-  if (req.user.rid !== 1) {
+  if (req.user.rid !== 1)
     return res.status(403).json({ message: "Access denied" });
-  }
 
   const { appointmentId } = req.body;
 
-  if (!appointmentId) {
-    return res.status(400).json({ message: "Appointment ID missing" });
-  }
+  db.query(
+    "SELECT host_link FROM appointments WHERE id=?",
+    [appointmentId],
+    (err, result) => {
 
-  const sql = `
-    UPDATE appointments
-    SET meeting_started = 1
-    WHERE id = ?
-  `;
+      if (err) return res.status(500).json({ message: "DB error" });
 
-  db.query(sql, [appointmentId], (err, result) => {
+      if (result.length === 0)
+        return res.status(404).json({ message: "Appointment not found" });
 
-    if (err) {
-      console.log(err);
-      return res.status(500).json({ message: "DB Error" });
+      res.json({
+        message: "Redirecting",
+        hostLink: result[0].host_link
+      });
     }
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ message: "Appointment not found" });
-    }
-
-    // Now get the existing meeting link
-    db.query(
-      "SELECT meeting_link FROM appointments WHERE id = ?",
-      [appointmentId],
-      (err2, rows) => {
-
-        if (err2) {
-          return res.status(500).json({ message: "DB error" });
-        }
-
-        res.json({
-          message: "Meeting started",
-          room: rows[0].meeting_link
-        });
-
-      }
-    );
-
-  });
+  );
 
 });
 
@@ -1536,8 +1931,6 @@ app.get("/patient/upcoming", verifyToken, (req, res) => {
   if (req.user.rid !== 3) {
     return res.status(403).json({ message: "Access denied" });
   }
-
-  const patientId = req.user.id;
 
   const sql = `
     SELECT 
@@ -1556,17 +1949,182 @@ app.get("/patient/upcoming", verifyToken, (req, res) => {
     LIMIT 1
   `;
 
-  db.query(sql, [patientId], (err, result) => {
+  db.query(sql, [req.user.id], (err, result) => {
     if (err) return res.status(500).json({ message: "DB error" });
 
-    if (result.length === 0) {
-      return res.json(null);
-    }
+    if (result.length === 0) return res.json(null);
 
     res.json(result[0]);
   });
+
 });
 
+
+// ==========================================
+//        RECEPTIONIST MODULE START
+// ==========================================
+
+// Check Receptionist Access
+function verifyReceptionist(req, res, next) {
+  if (req.user.rid !== 2) {
+    return res.status(403).json({ message: "Receptionist access only" });
+  }
+  next();
+}
+
+
+// ==========================================
+// 1️⃣ RECEPTIONIST DASHBOARD SUMMARY
+// ==========================================
+app.get("/receptionist/dashboard", verifyToken, verifyReceptionist, (req, res) => {
+
+  const doctorId = req.user.doctor_id;
+
+  const sql = `
+    SELECT
+      COUNT(*) AS totalAppointments,
+      SUM(CASE WHEN status='pending' THEN 1 ELSE 0 END) AS pending,
+      SUM(CASE WHEN status='accepted' THEN 1 ELSE 0 END) AS accepted,
+      SUM(CASE WHEN status='completed' THEN 1 ELSE 0 END) AS completed,
+      SUM(CASE WHEN status='cancelled' THEN 1 ELSE 0 END) AS cancelled
+    FROM appointments
+    WHERE doctor_id = ?
+  `;
+
+  db.query(sql, [doctorId], (err, result) => {
+    if (err) {
+      console.log("Dashboard Error:", err);
+      return res.status(500).json({ message: "Database error" });
+    }
+    res.json(result[0]);
+  });
+
+});
+
+
+// ==========================================
+// 2️⃣ VIEW ALL APPOINTMENTS
+// ==========================================
+app.get("/receptionist/appointments", verifyToken, verifyReceptionist, (req, res) => {
+
+  const doctorId = req.user.doctor_id;
+
+  const sql = `
+  SELECT 
+    a.id,
+    a.appointment_date,
+    a.appointment_time,
+    a.status,
+    u.name AS patient_name,
+    u.mobile_number
+  FROM appointments a
+  INNER JOIN users u 
+      ON a.patient_id = u.id
+  WHERE a.doctor_id = ?
+  ORDER BY a.appointment_date DESC, a.appointment_time DESC
+`;
+
+  db.query(sql, [doctorId], (err, result) => {
+    if (err) {
+      console.log("Appointments Error:", err);
+      return res.status(500).json({ message: "Database error" });
+    }
+    res.json(result);
+  });
+
+});
+
+
+// ==========================================
+// 3️⃣ CANCEL APPOINTMENT
+// ==========================================
+app.put("/receptionist/cancel/:id", verifyToken, verifyReceptionist, (req, res) => {
+
+  const appointmentId = req.params.id;
+
+  db.query(
+    "UPDATE appointments SET status='cancelled' WHERE id=?",
+    [appointmentId],
+    (err) => {
+      if (err) {
+        console.log("Cancel Error:", err);
+        return res.status(500).json({ message: "Database error" });
+      }
+
+      res.json({ message: "Appointment cancelled successfully" });
+    }
+  );
+
+});
+
+
+// ==========================================
+// 4️⃣ VIEW PATIENT LIST
+// ==========================================
+app.get("/receptionist/patients", verifyToken, verifyReceptionist, (req, res) => {
+
+  const doctorId = req.user.doctor_id;
+
+  const sql = `
+    SELECT DISTINCT 
+      u.id,
+      u.name,
+      u.email,
+      u.mobile_number
+    FROM appointments a
+    JOIN users u ON a.patient_id = u.id
+    WHERE a.doctor_id = ?
+    ORDER BY u.name ASC
+  `;
+
+  db.query(sql, [doctorId], (err, result) => {
+    if (err) {
+      console.log("Patients Error:", err);
+      return res.status(500).json({ message: "Database error" });
+    }
+    res.json(result);
+  });
+
+});
+
+// ==========================================
+// RECEPTIONIST PROFILE UPDATE
+// ==========================================
+// ==========================================
+// RECEPTIONIST PROFILE GET
+// ==========================================
+app.get("/receptionist/profile", verifyToken, (req, res) => {
+
+  if (req.user.rid !== 2) {
+    return res.status(403).json({ message: "Receptionist access only" });
+  }
+
+  db.query(
+    "SELECT id, name, email, mobile_number, address FROM users WHERE id = ?",
+    [req.user.id],
+    (err, result) => {
+
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ message: "Database error" });
+      }
+
+      if (result.length === 0) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      res.json(result[0]);
+    }
+  );
+});
+
+
+
+
+
+// ==========================================
+//        RECEPTIONIST MODULE END
+// ==========================================
 
 // ===============================
 // START SERVER

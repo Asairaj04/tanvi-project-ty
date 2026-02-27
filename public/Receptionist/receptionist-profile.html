@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Receptionist Profile</title>
+  <style>
+    body { margin:0; font-family:Arial; display:flex; }
+    .sidebar {
+      width:220px;
+      background:#1e293b;
+      color:white;
+      height:100vh;
+      padding:20px;
+    }
+    .sidebar a {
+      display:block;
+      color:white;
+      text-decoration:none;
+      padding:10px;
+      margin:8px 0;
+      border-radius:6px;
+    }
+    .sidebar a:hover { background:#334155; }
+    .logo { text-align:center; margin-bottom:30px; }
+    .content {
+      flex:1;
+      padding:30px;
+      background:#f1f5f9;
+    }
+    .card {
+      background:white;
+      padding:25px;
+      border-radius:10px;
+      width:400px;
+      box-shadow:0 3px 10px rgba(0,0,0,0.1);
+    }
+    input {
+      width:100%;
+      padding:8px;
+      margin-bottom:15px;
+    }
+    button {
+      padding:8px 15px;
+      background:#1e293b;
+      color:white;
+      border:none;
+      border-radius:6px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="sidebar">
+  <h4 class="logo">Clinic Panel</h4>
+  <a href="receptionist-dashboard.html">Dashboard</a>
+  <a href="receptionist-patient.html">Patients</a>
+  <a href="receptionist-appointment.html">Appointments</a>
+  <a href="receptionist-payment.html">Payments</a>
+  <a href="receptionist-profile.html">Profile</a>
+  <a href="#" onclick="logout()">Logout</a>
+</div>
+
+<div class="content">
+  <h2>My Profile</h2>
+
+  <div class="card">
+    <input type="text" id="name" placeholder="Name">
+    <input type="email" id="email" disabled>
+    <input type="text" id="mobile" placeholder="Mobile">
+    <input type="text" id="address" placeholder="Address">
+    <button onclick="updateProfile()">Update Profile</button>
+    <p id="msg"></p>
+  </div>
+
+</div>
+
+<script>
+const token = sessionStorage.getItem("token");
+
+if(!token){
+  window.location.href="../../login.html";
+}
+
+// Load profile
+fetch("http://localhost:3000/receptionist/profile",{
+  headers:{ Authorization:"Bearer "+token }
+})
+.then(res=>res.json())
+.then(data=>{
+  document.getElementById("name").value = data.name;
+  document.getElementById("email").value = data.email;
+  document.getElementById("mobile").value = data.mobile_number;
+  document.getElementById("address").value = data.address;
+});
+
+// Update profile
+function updateProfile(){
+
+  fetch("http://localhost:3000/receptionist/profile", {
+    headers: {
+      Authorization: "Bearer " + token
+    }
+  })
+  .then(res => {
+    if (!res.ok) {
+      throw new Error("Route not found or unauthorized");
+    }
+    return res.json();
+  })
+  .then(data => {
+    document.getElementById("name").value = data.name;
+    document.getElementById("email").value = data.email;
+    document.getElementById("mobile").value = data.mobile_number;
+    document.getElementById("address").value = data.address;
+  })
+  .catch(error => {
+    console.error("Profile Load Error:", error);
+  });
+}
+
+function logout(){
+  sessionStorage.removeItem("token");
+  window.location.href="../../login.html";
+}
+</script>
+
+</body>
+</html>

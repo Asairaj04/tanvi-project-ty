@@ -1,38 +1,58 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<title>Doctor Dashboard</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-
-<style>
-body { margin:0; font-family:'Segoe UI'; background:#f4f6f9; }
-.sidebar {
-  width:250px; height:100vh; position:fixed;
-  background:linear-gradient(180deg,#6f42c1,#4e73df);
-  color:white; padding-top:20px;
-}
-.sidebar a {
-  display:block; color:white; padding:12px 20px;
-  text-decoration:none;
-}
-.sidebar a:hover { background:rgba(255,255,255,0.2); }
-.sidebar a.active { background:rgba(255,255,255,0.3); font-weight:bold; }
-.main-content { margin-left:250px; padding:30px; }
-.status-badge { font-size:12px; padding:5px 8px; border-radius:8px; }
-</style>
+  <meta charset="UTF-8">
+  <title>Doctor Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI';
+      background: #f4f6f9;
+    }
+    .sidebar {
+      width: 250px;
+      height: 100vh;
+      position: fixed;
+      background: linear-gradient(180deg, #6f42c1, #4e73df);
+      color: white;
+      padding-top: 20px;
+    }
+    .sidebar a {
+      display: block;
+      color: white;
+      padding: 12px 20px;
+      text-decoration: none;
+    }
+    .sidebar a:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+    .sidebar a.active {
+      background: rgba(255, 255, 255, 0.3);
+      font-weight: bold;
+    }
+    .main-content {
+      margin-left: 250px;
+      padding: 30px;
+    }
+    .status-badge {
+      font-size: 12px;
+      padding: 5px 8px;
+      border-radius: 8px;
+    }
+  </style>
 </head>
 
 <body>
 
-<!-- SIDEBAR (UNCHANGED) -->
-<div class="sidebar">
-  <h4 class="text-center">Doctor Panel</h4>
-  <a href="doctor-dashboard.html" class="active">Dashboard</a>
-  <a href="doctor-appointment.html">Appointments</a>
-  <a href="doctor-profile.html">My Profile</a>
-  <a href="#" onclick="logout()">Logout</a>
-</div>
+  <div class="sidebar">
+    <h4 class="text-center">Doctor Panel</h4>
+  
+    <a href="doctor-dashboard.html">Dashboard</a>
+    <a href="doctor-appointment.html" class="active">Appointments</a>
+    <a href="doctor-profile.html">My Profile</a>
+    <a href="#" onclick="logout()">Logout</a>
+  </div>
 
 <div class="main-content">
   <h2 class="mb-4">Appointments</h2>
@@ -45,13 +65,12 @@ body { margin:0; font-family:'Segoe UI'; background:#f4f6f9; }
         <th>Time</th>
         <th>Symptoms</th>
         <th>Status</th>
-        <th>Payment</th> <!-- ADDED -->
+        <th>Payment</th>
         <th>Action</th>
       </tr>
     </thead>
     <tbody id="appointmentTable"></tbody>
   </table>
-
 </div>
 
 <script>
@@ -59,68 +78,74 @@ body { margin:0; font-family:'Segoe UI'; background:#f4f6f9; }
 checkAuth();
 loadAppointments();
 
-function logout(){
+function logout() {
   sessionStorage.removeItem("token");
-  window.location.href="../login.html";
+  window.location.href = "../login.html";
 }
 
-function checkAuth(){
-  const token=sessionStorage.getItem("token");
-  if(!token) window.location.href="../login.html";
+function checkAuth() {
+  const token = sessionStorage.getItem("token");
+  if (!token) window.location.href = "../login.html";
 }
 
-async function loadAppointments(){
+async function loadAppointments() {
 
   const token = sessionStorage.getItem("token");
 
-  const res = await fetch(
-    "http://localhost:3000/doctor/appointments",
-    {
-      headers:{ "Authorization":"Bearer " + token }
-    }
-  );
+  const res = await fetch("http://localhost:3000/doctor/appointments", {
+    headers: { "Authorization": "Bearer " + token }
+  });
 
-  if(res.status === 401 || res.status === 403){
+  if (res.status === 401 || res.status === 403) {
     alert("Unauthorized");
     return;
   }
 
   const data = await res.json();
-
   const table = document.getElementById("appointmentTable");
-  table.innerHTML="";
+  table.innerHTML = "";
 
-  data.forEach(app=>{
+  data.forEach(app => {
 
-    let badgeClass="";
-    if(app.status==="pending") badgeClass="bg-warning";
-    if(app.status==="accepted") badgeClass="bg-primary";
-    if(app.status==="completed") badgeClass="bg-success";
+    let badgeClass = "";
+    if (app.status === "pending") badgeClass = "bg-warning";
+    if (app.status === "accepted") badgeClass = "bg-primary";
+    if (app.status === "completed") badgeClass = "bg-success";
 
-    // PAYMENT BADGE (NEW)
-    let paymentBadge="";
-    if(app.payment_status==="paid"){
-      paymentBadge=`<span class="badge bg-success">Paid</span>`;
-    }else{
-      paymentBadge=`<span class="badge bg-danger">Not Paid</span>`;
-    }
+    let paymentBadge = app.payment_status === "paid"
+      ? `<span class="badge bg-success">Paid</span>`
+      : `<span class="badge bg-danger">Not Paid</span>`;
 
-    let actionBtn="";
+    let actionBtn = "";
 
-    if(app.status==="pending"){
-      actionBtn=`
+    // Pending → Accept
+    if (app.status === "pending") {
+      actionBtn = `
         <button class="btn btn-sm btn-primary"
-        onclick="updateStatus(${app.id},'accept')">
-        Accept</button>
+          onclick="updateStatus(${app.id}, 'accept')">
+          Accept
+        </button>
       `;
     }
 
-    if(app.status==="accepted"){
-      actionBtn=`
-        <button class="btn btn-sm btn-success"
-        onclick="updateStatus(${app.id},'complete')">
-        Complete</button>
+    // Accepted → Start + Complete
+    else if (app.status === "accepted") {
+      actionBtn = `
+        <button class="btn btn-sm btn-success me-2"
+          onclick="startMeeting(${app.id})">
+          Start Meeting
+        </button>
+
+        <button class="btn btn-sm btn-secondary"
+          onclick="updateStatus(${app.id}, 'complete')">
+          Complete
+        </button>
       `;
+    }
+
+    // Completed → No Action
+    else {
+      actionBtn = `<span class="text-muted">No Action</span>`;
     }
 
     table.innerHTML += `
@@ -138,25 +163,45 @@ async function loadAppointments(){
         <td>${actionBtn}</td>
       </tr>
     `;
-
   });
-
 }
 
-async function updateStatus(id,type){
+async function updateStatus(id, type) {
 
   const token = sessionStorage.getItem("token");
 
-  const url = type==="accept"
+  const url = type === "accept"
     ? `http://localhost:3000/doctor/accept/${id}`
     : `http://localhost:3000/doctor/complete/${id}`;
 
-  await fetch(url,{
-    method:"PUT",
-    headers:{ "Authorization":"Bearer " + token }
+  await fetch(url, {
+    method: "PUT",
+    headers: { "Authorization": "Bearer " + token }
   });
 
   loadAppointments();
+}
+
+async function startMeeting(appointmentId) {
+
+  const token = sessionStorage.getItem("token");
+
+  const res = await fetch("http://localhost:3000/doctor/start-meeting", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + token
+    },
+    body: JSON.stringify({ appointmentId })
+  });
+
+  const data = await res.json();
+
+  if (data.hostLink) {
+    window.location.href = data.hostLink; // 🔥 Redirect to Zoom host URL
+  } else {
+    alert("Unable to start meeting.");
+  }
 }
 
 </script>
