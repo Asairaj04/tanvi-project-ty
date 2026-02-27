@@ -61,7 +61,7 @@ body { margin:0; font-family:'Segoe UI'; background:#f4f6f9; }
 <div class="sidebar">
   <h4>Doctor Panel</h4>
   <a href="doctor-dashboard.html">Dashboard</a>
-  <a href="doctor-appointments.html">Appointments</a>
+  <a href="doctor-appointment.html">Appointments</a>
   <a href="doctor-profile.html" class="active">My Profile</a>
   <a href="#" onclick="logout()">Logout</a>
 </div>
@@ -115,7 +115,7 @@ body { margin:0; font-family:'Segoe UI'; background:#f4f6f9; }
 function checkAuth(){
   const token = sessionStorage.getItem("token");
   if(!token){
-    window.location.href="login.html";
+    window.location.href="../login.html";
   }
 }
 checkAuth();
@@ -254,7 +254,7 @@ async function saveProfile(){
 // ===============================
 function logout(){
   sessionStorage.removeItem("token");
-  window.location.href="login.html";
+  window.location.href="../login.html";
 }
 
 </script>

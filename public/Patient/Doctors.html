@@ -131,7 +131,7 @@ body {
 function checkAuth(){
   const token = sessionStorage.getItem("token");
   if(!token){
-    window.location.href = "login.html";
+    window.location.href = "../login.html";
   }
 }
 checkAuth();
@@ -142,7 +142,7 @@ checkAuth();
 document.getElementById("logoutBtn").addEventListener("click", function(e){
   e.preventDefault();
   sessionStorage.removeItem("token");
-  window.location.href = "login.html";
+  window.location.href = "../login.html";
 });
 
 // ==========================
