@@ -1,41 +1,181 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Payments</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payments | Clinic Pro</title>
+  
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
   <style>
-    body { margin:0; font-family:Arial; display:flex; }
-    .sidebar { width:220px; background:#1e293b; color:white; height:100vh; padding:20px; }
-    .sidebar a { display:block; color:white; text-decoration:none; padding:10px; margin:8px 0; border-radius:6px; }
-    .sidebar a:hover { background:#334155; }
-    .logo { text-align:center; margin-bottom:30px; }
-    .content { flex:1; padding:30px; background:#f1f5f9; }
-    table { width:100%; background:white; border-collapse:collapse; }
-    th,td { padding:10px; border:1px solid #ddd; }
+    :root {
+      --sidebar-bg: #0f172a;
+      --accent-color: #6366f1;
+      --success-green: #10b981;
+      --gradient-primary: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+      --bg-light: #f8fafc;
+    }
+
+    body { 
+      font-family: 'Inter', sans-serif; 
+      background-color: var(--bg-light);
+      margin: 0;
+      display: flex;
+    }
+
+    /* Sidebar (Consistent Branding) */
+    .sidebar {
+      width: 260px;
+      background: var(--sidebar-bg);
+      color: white;
+      height: 100vh;
+      position: fixed;
+      box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+      z-index: 1000;
+    }
+
+    .logo-container {
+      padding: 30px 20px;
+      text-align: center;
+      background: rgba(255,255,255,0.05);
+      margin-bottom: 20px;
+    }
+
+    .logo-container h4 {
+      font-weight: 700;
+      background: var(--gradient-primary);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin: 0;
+    }
+
+    .sidebar a {
+      display: flex;
+      align-items: center;
+      color: #94a3b8;
+      text-decoration: none;
+      padding: 12px 25px;
+      margin: 4px 15px;
+      border-radius: 8px;
+      font-weight: 500;
+      transition: 0.3s;
+    }
+
+    .sidebar a i { margin-right: 12px; }
+
+    .sidebar a:hover, .sidebar a.active {
+      background: rgba(255,255,255,0.1);
+      color: white;
+    }
+
+    .sidebar a.active {
+      background: var(--accent-color);
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+    }
+
+    /* Content Area */
+    .main-content {
+      flex: 1;
+      margin-left: 260px;
+      padding: 40px;
+    }
+
+    h2 { font-weight: 700; color: #1e293b; margin-bottom: 30px; }
+
+    /* Payment Table UI */
+    .payment-card {
+      background: white;
+      padding: 25px;
+      border-radius: 16px;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+    }
+
+    .table thead th {
+      background-color: #f8fafc;
+      color: #64748b;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 15px;
+      border: none;
+    }
+
+    .table tbody td {
+      padding: 18px 15px;
+      vertical-align: middle;
+      color: #334155;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .amount-text {
+        font-weight: 700;
+        color: var(--success-green);
+    }
+
+    .badge-paid {
+        background: #d1fae5;
+        color: #065f46;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .logout-btn { color: #f87171 !important; margin-top: 50px !important; }
   </style>
 </head>
 <body>
 
-    <div class="sidebar">
-        <h4 class="logo">Clinic Panel</h4>
-        <a href="receptionist-dashboard.html">Dashboard</a>
-        <a href="receptionist-patient.html">Patients</a>
-        <a href="receptionist-appointment.html">Appointments</a>
-        <a href="receptionist-payment.html">Payments</a>
-        <a href="receptionist-profile.html">Profile</a>
-        <a href="#" onclick="logout()">Logout</a>
+  <div class="sidebar">
+    <div class="logo-container">
+      <h4>CLINIC PRO</h4>
+    </div>
+    <a href="receptionist-dashboard.html"><i class="fas fa-chart-pie"></i> Dashboard</a>
+    <a href="receptionist-patient.html"><i class="fas fa-user-injured"></i> Patients</a>
+    <a href="receptionist-appointment.html"><i class="fas fa-calendar-check"></i> Appointments</a>
+    <a href="receptionist-payment.html" class="active"><i class="fas fa-credit-card"></i> Payments</a>
+    <a href="receptionist-profile.html"><i class="fas fa-user-circle"></i> Profile</a>
+    <a href="#" onclick="logout()" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+  </div>
+
+  <div class="main-content">
+    <h2>Payment History</h2>
+
+    <div class="payment-card">
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Transaction ID</th>
+              <th>Patient Name</th>
+              <th>Date</th>
+              <th>Amount (INR)</th>
+              <th>Status</th>
+              <th>Receipt</th>
+            </tr>
+          </thead>
+          <tbody id="payment-table">
+            <tr><td colspan="6" class="text-center py-5 text-muted">
+                <i class="fas fa-spinner fa-spin me-2"></i> Loading payment records...
+            </td></tr>
+          </tbody>
+        </table>
       </div>
+    </div>
+  </div>
 
-<div class="content">
-  <h2>Payments</h2>
-  <p>Payment history will be displayed here.</p>
-</div>
+  <script>
+    const token = sessionStorage.getItem("token");
 
-<script>
-function logout(){
-    sessionStorage.removeItem("token");
-  window.location.href="../login.html";
-}
-</script>
+    function logout(){
+      sessionStorage.removeItem("token");
+      window.location.href="../login.html";
+    }
+
+    // Logic for loading payment data can be added here
+  </script>
 
 </body>
 </html>

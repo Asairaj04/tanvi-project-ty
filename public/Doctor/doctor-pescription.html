@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ayurvedic Digital Prescription | Clinic Pro</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    :root {
+      --primary-green: #2d4a27;
+      --secondary-gold: #a67c37;
+      --paper-white: #ffffff;
+      --bg-wash: #f4f1ea;
+    }
+
+    body {
+      background-color: var(--bg-wash);
+      font-family: 'Georgia', serif;
+      padding: 40px 0;
+    }
+
+    .prescription-card {
+      max-width: 850px;
+      margin: auto;
+      background: var(--paper-white);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      border-top: 12px solid var(--primary-green);
+      min-height: 1050px;
+      padding: 60px;
+      position: relative;
+    }
+
+    /* Header Styles */
+    .dr-header {
+      border-bottom: 2px solid var(--primary-green);
+      padding-bottom: 15px;
+      margin-bottom: 25px;
+    }
+
+    .dr-name {
+      color: var(--primary-green);
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      margin: 0;
+    }
+
+    .specialist {
+      color: var(--secondary-gold);
+      font-style: italic;
+      font-size: 1.1rem;
+      margin: 0;
+    }
+
+    /* Patient Info Section */
+    .patient-info-strip {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 30px;
+      font-size: 0.95rem;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 15px;
+    }
+
+    .rx-symbol {
+      font-size: 3.5rem;
+      color: var(--primary-green);
+      font-family: 'Times New Roman', serif;
+      line-height: 1;
+      margin: 10px 0 20px 0;
+    }
+
+    /* Medicine Table */
+    .med-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .med-table th {
+      color: var(--primary-green);
+      text-transform: uppercase;
+      font-size: 0.8rem;
+      letter-spacing: 1px;
+      border-bottom: 2px solid var(--primary-green);
+      padding: 10px;
+    }
+
+    .med-table td {
+      padding: 15px 10px;
+      border-bottom: 1px dashed #d1d1d1;
+      font-size: 1.1rem;
+    }
+
+    .qty-col { width: 120px; font-weight: 600; color: var(--secondary-gold); }
+    .inst-col { font-size: 0.95rem; color: #555; font-style: italic; }
+
+    /* Input Controls */
+    .input-box {
+      background: #fdfaf5;
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px solid #e0dacc;
+      margin-bottom: 40px;
+    }
+
+    .form-control-custom {
+      border: 1px solid #d1c8b8;
+      border-radius: 8px;
+      padding: 10px;
+    }
+
+    .btn-add-herb {
+      background: var(--primary-green);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px;
+      font-weight: 600;
+      transition: 0.3s;
+    }
+
+    .btn-add-herb:hover { background: #1e331a; }
+
+    /* Footer */
+    .footer-sign {
+      position: absolute;
+      bottom: 80px;
+      right: 60px;
+      text-align: center;
+    }
+
+    @media print {
+      .no-print { display: none !important; }
+      body { background: white; padding: 0; }
+      .prescription-card { box-shadow: none; border-width: 1px; width: 100%; margin: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="prescription-card">
+  <div class="dr-header d-flex justify-content-between align-items-end">
+    <div>
+      <h1 class="dr-name">Vaidya Rajesh Kumar</h1>
+      <p class="specialist">B.A.M.S | Ayurvedic Physician & Panchakarma Specialist</p>
+      <small class="text-muted"><i class="bi bi-geo-alt"></i> Heritage Wellness Center, Kerala</small>
+    </div>
+    <div class="text-end">
+      <p class="mb-0"><strong>Date:</strong> <span id="currentDate"></span></p>
+      <p class="mb-0 small text-muted">Reg No: AYU-99281</p>
+    </div>
+  </div>
+
+  <div class="patient-info-strip">
+    <div><strong>Patient:</strong> <span contenteditable="true" class="border-bottom px-2">Click to type name</span></div>
+    <div><strong>Age/Sex:</strong> <span contenteditable="true" class="border-bottom px-2">--</span></div>
+    <div class="text-end"><strong>ID:</strong> <span contenteditable="true" class="border-bottom px-2">#000</span></div>
+  </div>
+
+  <div class="input-box no-print">
+    <div class="row g-2">
+      <div class="col-md-5">
+        <input type="text" id="medName" class="form-control form-control-custom" placeholder="Medicine Name (e.g. Ashwagandha Rishta)">
+      </div>
+      <div class="col-md-2">
+        <input type="text" id="medQty" class="form-control form-control-custom" placeholder="Qty">
+      </div>
+      <div class="col-md-3">
+        <input type="text" id="medInst" class="form-control form-control-custom" placeholder="Instructions (Anupana)">
+      </div>
+      <div class="col-md-2">
+        <button class="btn btn-add-herb w-100" onclick="addMedicine()">
+          <i class="bi bi-plus-lg"></i> Add
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="rx-symbol">℞</div>
+
+  <table class="med-table">
+    <thead>
+      <tr>
+        <th>Medicine / Herb</th>
+        <th class="qty-col text-center">Qty</th>
+        <th>Dosage & Instructions</th>
+        <th class="no-print" style="width: 40px;"></th>
+      </tr>
+    </thead>
+    <tbody id="medicineBody">
+      <tr class="placeholder-row">
+        <td colspan="4" class="text-center py-5 text-muted small">Add medicines above to populate the prescription</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="footer-sign">
+    <p class="mb-0">__________________________</p>
+    <p class="mt-1" style="color: var(--primary-green); font-weight: bold;">Authorized Vaidya Signature</p>
+  </div>
+</div>
+
+<div class="container text-center mt-4 no-print pb-5">
+  <button class="btn btn-success btn-lg px-5 shadow" onclick="window.print()">
+    <i class="bi bi-printer-fill me-2"></i>Print Prescription
+  </button>
+  <button class="btn btn-outline-secondary btn-lg ms-2" onclick="location.href='doctor-dashboard.html'">
+    <i class="bi bi-house-door"></i>
+  </button>
+</div>
+
+<script>
+  // Set Current Date
+  document.getElementById('currentDate').innerText = new Date().toLocaleDateString('en-GB', {
+    day: 'numeric', month: 'long', year: 'numeric'
+  });
+
+  function addMedicine() {
+    const nameInput = document.getElementById('medName');
+    const qtyInput = document.getElementById('medQty');
+    const instInput = document.getElementById('medInst');
+    const tableBody = document.getElementById('medicineBody');
+
+    if (nameInput.value.trim() === "") {
+      alert("Please enter at least the medicine name.");
+      return;
+    }
+
+    // Remove placeholder if it exists
+    const placeholder = document.querySelector('.placeholder-row');
+    if (placeholder) placeholder.remove();
+
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td><strong>${nameInput.value}</strong></td>
+      <td class="qty-col text-center">${qtyInput.value || '-'}</td>
+      <td class="inst-col">${instInput.value || 'As directed'}</td>
+      <td class="no-print text-end">
+        <button class="btn btn-sm text-danger" onclick="removeRow(this)">
+          <i class="bi bi-trash"></i>
+        </button>
+      </td>
+    `;
+
+    tableBody.appendChild(row);
+    
+    // Clear and focus
+    nameInput.value = "";
+    qtyInput.value = "";
+    instInput.value = "";
+    nameInput.focus();
+  }
+
+  function removeRow(btn) {
+    btn.closest('tr').remove();
+    if (document.getElementById('medicineBody').children.length === 0) {
+        location.reload(); // Restores placeholder
+    }
+  }
+
+  // Support Enter Key
+  document.addEventListener('keypress', function (e) {
+    if (e.key === 'Enter') {
+      addMedicine();
+    }
+  });
+</script>
+
+</body>
+</html>
